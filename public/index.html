@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>永恒森林Wiki - Minecraft服务器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- 富文本编辑器 -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <style>
+        body { 
+            font-family: 'Courier New', monospace; 
+            background: url('https://p26-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/f60b76ce32364433ad6c7b91255d3c0b~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=202603291635206D87D536D377696D9DB1&rrcfp=f06b921b&x-expires=1777365364&x-signature=rFYD%2BkaKu9CaB1RJB%2FBFQrQP1wk%3D');
+            background-size: cover;
+            background-attachment: fixed;
+            background-position: center;
+            min-height: 100vh;
+        }
+        .minecraft-btn { 
+            background: #3c8c40; 
+            border: 2px solid #000; 
+            color: white; 
+            padding: 8px 16px; 
+            cursor: pointer; 
+            box-shadow: 3px 3px 0 #000; 
+            transition: all 0.1s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .minecraft-btn:hover { 
+            background: #2d6e30; 
+            transform: translate(1px,1px); 
+        }
+        .glass-panel { 
+            background: rgba(255,255,255,0.92); 
+            backdrop-filter: blur(5px); 
+            border-radius: 10px; 
+            padding: 20px; 
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        /* 修复图层问题 */
+        #loginModal, #registerModal, #adminModal, #feedbackModal {
+            z-index: 9999 !important;
+        }
+        .ql-editor { min-height: 200px; background: white; }
+        .announcement-content { line-height: 1.6; }
+        .announcement-content a { color: #3b82f6; text-decoration: underline; }
+        .announcement-content a:hover { color: #1d4ed8; }
+        .logo-img {
+            width: 48px;
+            height: 48px;
+            object-fit: contain;
+        }
+        /* 反馈标签 */
+        .feedback-type-btn {
+            padding: 6px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .feedback-type-btn.active {
+            background: #3c8c40;
+            color: white;
+            border-color: #3c8c40;
+        }
+    </style>
+</head>
+<body>
+    <header class="bg-green-900 text-white p-4 sticky top-0 z-50 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center flex-wrap gap-2">
+            <div class="flex items-center gap-3">
+                <img src="https://p26-flow-imagex-download-sign.byteimg.com/tos-cn-i-a9rns2rl98/9b5458d1b259479a821a4a238b88d9ce.png~tplv-a9rns2rl98-24:720:720.png?lk3s=8e244e95&rcl=202603291644234B0278FCD530861CB504&rrcfp=8a172a1a&x-expires=1775378663&x-signature=WYX7Y4%2BAo%2FlHHtGe%2FmvGVb841RY%3D" alt="永恒森林" class="logo-img" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.8em%22 font-size=%2290%22>🌲</text></svg>'">
+                <h1 class="text-2xl font-bold">永恒森林Wiki</h1>
+            </div>
+            <div class="space-x-4">
+                <a href="#home" class="hover:text-green-300">首页</a>
+                <a href="#announcements" class="hover:text-green-300">公告</a>
+                <button id="feedbackBtn" class="hover:text-yellow-300">💬 意见反馈</button>
+                <button id="loginBtn" class="hover:text-green-300">登录</button>
+                <button id="registerBtn" class="hover:text-green-300">注册</button>
+                <span id="userName" class="hidden text-green-300"></span>
+                <button id="logoutBtn" class="hidden hover:text-red-300">退出</button>
+                <button id="adminBtn" class="hover:text-red-300">管理员</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4 max-w-4xl">
+        <!-- 欢迎横幅 -->
+        <section id="home" class="my-8">
+            <div class="glass-panel text-center">
+                <div class="text-6xl mb-4">🌳</div>
+                <h2 class="text-4xl font-bold mb-4">欢迎来到永恒森林</h2>
+                <p class="text-xl">Minecraft 服务器 | 纯净生存 | 白名单制</p>
+                <div class="flex justify-center gap-4 mt-6 flex-wrap">
+                    <button id="joinServer" class="minecraft-btn">📡 加入服务器</button>
+                    <button id="copyAddress" class="minecraft-btn bg-blue-700">📋 复制地址</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 公告区域 -->
+        <section id="announcements" class="my-8">
+            <h2 class="text-2xl font-bold mb-4 text-white drop-shadow-lg">📢 服务器公告</h2>
+            <div id="announcementsList" class="space-y-4"></div>
+        </section>
+
+        <!-- 举报区域 -->
+        <section class="my-8">
+            <div class="glass-panel">
+                <h3 class="text-xl font-bold mb-4">⚠️ 违规举报</h3>
+                <div id="reportArea">
+                    <input type="text" id="reportPlayer" placeholder="违规玩家ID" class="w-full p-2 border mb-2 rounded">
+                    <input type="text" id="reportReason" placeholder="违规行为描述" class="w-full p-2 border mb-2 rounded">
+                    <button id="submitReport" class="minecraft-btn bg-red-700 w-full justify-center">提交举报</button>
+                </div>
+                <div id="loginTip" class="hidden text-red-600 text-center p-4">请先登录后再举报</div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-green-900 text-white text-center p-4 mt-8">
+        <p>© 2025 永恒森林服务器 | 白名单制 | 举报/反馈邮箱: 3632372460@qq.com</p>
+    </footer>
+
+    <!-- 登录模态框 -->
+    <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center">
+        <div class="bg-white p-6 rounded-lg w-96 max-w-[90%]">
+            <h3 class="text-xl font-bold mb-4">🔐 登录</h3>
+            <input type="text" id="loginAccount" placeholder="邮箱/用户名" class="w-full p-2 border mb-2 rounded">
+            <input type="password" id="loginPassword" placeholder="密码" class="w-full p-2 border mb-4 rounded">
+            <button id="doLogin" class="minecraft-btn w-full justify-center">登录</button>
+            <button id="closeLogin" class="mt-2 text-gray-500 w-full">关闭</button>
+        </div>
+    </div>
+
+    <!-- 注册模态框 -->
+    <div id="registerModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center">
+        <div class="bg-white p-6 rounded-lg w-96 max-w-[90%]">
+            <h3 class="text-xl font-bold mb-4">📝 注册（同时申请白名单）</h3>
+            <input type="text" id="regUsername" placeholder="游戏ID（英文+数字，3-16位）" class="w-full p-2 border mb-2 rounded">
+            <input type="email" id="regEmail" placeholder="邮箱" class="w-full p-2 border mb-2 rounded">
+            <input type="password" id="regPassword" placeholder="密码（至少6位）" class="w-full p-2 border mb-2 rounded">
+            <div class="flex gap-2 mb-4">
+                <input type="text" id="regCode" placeholder="验证码" class="flex-1 p-2 border rounded">
+                <button id="sendCode" class="minecraft-btn text-sm px-3">发送验证码</button>
+            </div>
+            <button id="doRegister" class="minecraft-btn w-full bg-green-700 justify-center">注册并申请白名单</button>
+            <button id="closeRegister" class="mt-2 text-gray-500 w-full">关闭</button>
+            <p class="text-xs text-gray-500 mt-2">注册后需等待管理员审核白名单，审核通过后才能登录游戏</p>
+        </div>
+    </div>
+
+    <!-- 意见反馈模态框 -->
+    <div id="feedbackModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center">
+        <div class="bg-white p-6 rounded-lg w-[500px] max-w-[95%]">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">💬 意见反馈</h3>
+                <button id="closeFeedback" class="text-2xl hover:text-gray-500">&times;</button>
+            </div>
+            
+            <!-- 反馈类型选择 -->
+            <div class="flex gap-2 mb-4">
+                <button data-type="general" class="feedback-type-btn border px-3 py-1 rounded-full text-sm active">📋 一般</button>
+                <button data-type="bug" class="feedback-type-btn border px-3 py-1 rounded-full text-sm">🐛 BUG反馈</button>
+                <button data-type="suggest" class="feedback-type-btn border px-3 py-1 rounded-full text-sm">💡 建议</button>
+                <button data-type="other" class="feedback-type-btn border px-3 py-1 rounded-full text-sm">📝 其他</button>
+            </div>
+            
+            <input type="text" id="feedbackName" placeholder="你的名字（选填）" class="w-full p-2 border mb-2 rounded">
+            <input type="email" id="feedbackEmail" placeholder="联系方式（选填，方便回复）" class="w-full p-2 border mb-2 rounded">
+            <textarea id="feedbackContent" rows="5" placeholder="请告诉我们你的意见、建议或遇到的问题..." class="w-full p-2 border mb-3 rounded"></textarea>
+            
+            <div class="flex gap-3">
+                <button id="submitFeedback" class="minecraft-btn bg-green-700 flex-1 justify-center">提交反馈</button>
+                <button id="cancelFeedback" class="minecraft-btn bg-gray-600 flex-1 justify-center">取消</button>
+            </div>
+            <p class="text-xs text-gray-400 mt-3">你的反馈将直接发送给管理员，我们会认真对待每一条建议！</p>
+        </div>
+    </div>
+
+    <!-- 管理员面板模态框 -->
+    <div id="adminModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center">
+        <div class="bg-white p-6 rounded-lg w-[700px] max-w-[95%] max-h-[90%] overflow-auto">
+            <h3 class="text-xl font-bold mb-4">⚙️ 管理员面板</h3>
+            
+            <!-- 标签页切换 -->
+            <div class="flex border-b mb-4">
+                <button class="admin-tab-btn px-4 py-2 font-bold border-b-2 border-green-600" data-tab="whitelist">📋 白名单申请</button>
+                <button class="admin-tab-btn px-4 py-2 font-bold" data-tab="feedback">💬 意见反馈</button>
+                <button class="admin-tab-btn px-4 py-2 font-bold" data-tab="announcement">📝 公告管理</button>
+            </div>
+            
+            <!-- 白名单申请标签页 -->
+            <div id="tab-whitelist" class="admin-tab-content">
+                <div id="whitelistRequests" class="space-y-2 max-h-60 overflow-auto"></div>
+            </div>
+            
+            <!-- 意见反馈标签页 -->
+            <div id="tab-feedback" class="admin-tab-content hidden">
+                <div id="feedbackList" class="space-y-2 max-h-60 overflow-auto"></div>
+            </div>
+            
+            <!-- 公告管理标签页 -->
+            <div id="tab-announcement" class="admin-tab-content hidden">
+                <div class="mb-4">
+                    <h4 class="font-bold mb-2">📝 添加公告</h4>
+                    <input type="text" id="annTitle" placeholder="公告标题" class="w-full p-2 border mb-2 rounded">
+                    <div id="editorContainer"></div>
+                    <select id="annType" class="w-full p-2 border my-2 rounded">
+                        <option value="info">📘 信息</option>
+                        <option value="warning">⚠️ 警告</option>
+                        <option value="server">🖥️ 服务器</option>
+                        <option value="community">👥 社区</option>
+                    </select>
+                    <button id="addAnnouncement" class="minecraft-btn bg-green-700 w-full justify-center">发布公告</button>
+                </div>
+                
+                <div>
+                    <h4 class="font-bold mb-2">🗑️ 删除公告</h4>
+                    <select id="deleteSelect" class="w-full p-2 border rounded mb-2"></select>
+                    <button id="deleteAnnouncement" class="minecraft-btn bg-red-700 w-full justify-center">删除选中公告</button>
+                </div>
+            </div>
+            
+            <button id="closeAdmin" class="mt-4 text-gray-500 w-full">关闭面板</button>
+        </div>
+    </div>
+
+    <script>
+        const API = '/api';
+        let currentUser = null;
+        let quillEditor = null;
+        let selectedFeedbackType = 'general';
+
+        // 复制服务器地址
+        document.getElementById('copyAddress').onclick = () => {
+            const address = 'pm.rainplay.cn:54160';
+            navigator.clipboard.writeText(address);
+            alert('已复制服务器地址：' + address);
+        };
+
+        function showModal(title, msg) { alert(title + '\n' + msg); }
+
+        // 加载公告
+        async function loadAnnouncements() {
+            try {
+                const res = await axios.get(API + '/announcements');
+                if(res.data.success) {
+                    const html = res.data.data.map(a => `
+                        <div class="glass-panel">
+                            <div class="flex justify-between items-start flex-wrap gap-2">
+                                <h3 class="font-bold text-xl">${escapeHtml(a.title)}</h3>
+                                <span class="text-xs px-2 py-1 rounded ${a.type === 'warning' ? 'bg-red-200' : 'bg-gray-200'}">${a.type === 'warning' ? '⚠️ 警告' : a.type === 'server' ? '🖥️ 服务器' : a.type === 'community' ? '👥 社区' : '📘 信息'}</span>
+                            </div>
+                            <div class="announcement-content mt-2">${a.content}</div>
+                            <div class="text-xs text-gray-400 mt-2">${new Date(a.date).toLocaleString()}</div>
+                        </div>
+                    `).join('');
+                    document.getElementById('announcementsList').innerHTML = html || '<div class="glass-panel">暂无公告</div>';
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        function escapeHtml(str) {
+            if(!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if(m === '&') return '&amp;';
+                if(m === '<') return '&lt;';
+                if(m === '>') return '&gt;';
+                return m;
+            });
+        }
+
+        function updateUI() {
+            if(currentUser) {
+                document.getElementById('userName').innerHTML = `👤 ${currentUser.username}`;
+                document.getElementById('userName').classList.remove('hidden');
+                document.getElementById('logoutBtn').classList.remove('hidden');
+                document.getElementById('loginBtn').classList.add('hidden');
+                document.getElementById('registerBtn').classList.add('hidden');
+                document.getElementById('reportArea').classList.remove('hidden');
+                document.getElementById('loginTip').classList.add('hidden');
+            } else {
+                document.getElementById('userName').classList.add('hidden');
+                document.getElementById('logoutBtn').classList.add('hidden');
+                document.getElementById('loginBtn').classList.remove('hidden');
+                document.getElementById('registerBtn').classList.remove('hidden');
+                document.getElementById('reportArea').classList.add('hidden');
+                document.getElementById('loginTip').classList.remove('hidden');
+            }
+        }
+
+        // 加载白名单申请
+        async function loadWhitelistRequests() {
+            try {
+                const res = await axios.get(API + '/admin/whitelist-requests', { params: { admin: 'true' } });
+                if(res.data.success && res.data.data.length) {
+                    const html = res.data.data.map(r => `
+                        <div class="border p-2 rounded flex justify-between items-center flex-wrap gap-2">
+                            <div>
+                                <span class="font-bold">${escapeHtml(r.username)}</span>
+                                <span class="text-sm text-gray-500">(${r.email})</span>
+                                <span class="text-xs ml-2 ${r.status === 'pending' ? 'text-yellow-600' : r.status === 'approved' ? 'text-green-600' : 'text-red-600'}">${r.status === 'pending' ? '⏳ 待审核' : r.status === 'approved' ? '✅ 已通过' : '❌ 已拒绝'}</span>
+                            </div>
+                            ${r.status === 'pending' ? `
+                            <div class="flex gap-1">
+                                <button onclick="reviewRequest(${r.id}, 'approve')" class="minecraft-btn text-sm bg-green-700 px-2 py-1">✓ 通过</button>
+                                <button onclick="reviewRequest(${r.id}, 'reject')" class="minecraft-btn text-sm bg-red-700 px-2 py-1">✗ 拒绝</button>
+                            </div>
+                            ` : ''}
+                        </div>
+                    `).join('');
+                    document.getElementById('whitelistRequests').innerHTML = html;
+                } else {
+                    document.getElementById('whitelistRequests').innerHTML = '<div class="text-gray-500">暂无申请</div>';
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        // 加载反馈列表
+        async function loadFeedbacks() {
+            try {
+                const res = await axios.get(API + '/admin/feedbacks', { params: { admin: 'true' } });
+                if(res.data.success && res.data.data.length) {
+                    const html = res.data.data.map(f => `
+                        <div class="border p-2 rounded">
+                            <div class="flex justify-between items-start">
+                                <span class="font-bold">${escapeHtml(f.name || '匿名')}</span>
+                                <span class="text-xs text-gray-400">${f.date || ''}</span>
+                            </div>
+                            <p class="text-sm mt-1">${escapeHtml(f.content)}</p>
+                        </div>
+                    `).join('');
+                    document.getElementById('feedbackList').innerHTML = html;
+                } else {
+                    document.getElementById('feedbackList').innerHTML = '<div class="text-gray-500">暂无反馈</div>';
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        window.reviewRequest = async (id, action) => {
+            try {
+                const res = await axios.post(API + '/admin/whitelist-review', { requestId: id, action }, { params: { admin: 'true' } });
+                showModal('成功', res.data.message);
+                loadWhitelistRequests();
+            } catch(e) { showModal('错误', '操作失败'); }
+        };
+
+        async function loadDeleteSelect() {
+            try {
+                const res = await axios.get(API + '/announcements');
+                if(res.data.success) {
+                    const select = document.getElementById('deleteSelect');
+                    select.innerHTML = '<option value="">-- 选择要删除的公告 --</option>' + 
+                        res.data.data.map(a => `<option value="${a.id}">${escapeHtml(a.title)}</option>`).join('');
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        // 提交反馈
+        async function submitFeedback() {
+            const content = document.getElementById('feedbackContent').value.trim();
+            if(!content) {
+                showModal('提示', '请填写反馈内容');
+                return;
+            }
+            
+            const name = document.getElementById('feedbackName').value.trim();
+            const email = document.getElementById('feedbackEmail').value.trim();
+            
+            try {
+                const res = await axios.post(API + '/feedback', {
+                    name: name || null,
+                    email: email || null,
+                    content: content,
+                    type: selectedFeedbackType
+                });
+                showModal(res.data.success ? '提交成功' : '提交失败', res.data.message);
+                if(res.data.success) {
+                    document.getElementById('feedbackContent').value = '';
+                    document.getElementById('feedbackName').value = '';
+                    document.getElementById('feedbackEmail').value = '';
+                    document.getElementById('feedbackModal').classList.add('hidden');
+                }
+            } catch(e) {
+                showModal('错误', '提交失败，请稍后重试');
+            }
+        }
+
+        // 登录
+        document.getElementById('doLogin').onclick = async () => {
+            const account = document.getElementById('loginAccount').value;
+            const password = document.getElementById('loginPassword').value;
+            try {
+                const res = await axios.post(API + '/auth/login', { account, password });
+                if(res.data.success) {
+                    currentUser = res.data.user;
+                    updateUI();
+                    document.getElementById('loginModal').classList.add('hidden');
+                    showModal('成功', '登录成功！');
+                } else showModal('失败', res.data.message);
+            } catch(e) { showModal('错误', '登录失败'); }
+        };
+
+        // 注册
+        document.getElementById('doRegister').onclick = async () => {
+            const username = document.getElementById('regUsername').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+            const code = document.getElementById('regCode').value;
+            try {
+                const res = await axios.post(API + '/auth/register', { username, email, password, code });
+                showModal(res.data.success ? '成功' : '失败', res.data.message);
+                if(res.data.success) {
+                    document.getElementById('registerModal').classList.add('hidden');
+                    document.getElementById('loginModal').classList.remove('hidden');
+                }
+            } catch(e) { showModal('错误', '注册失败'); }
+        };
+
+        // 发送验证码
+        document.getElementById('sendCode').onclick = async () => {
+            const email = document.getElementById('regEmail').value;
+            if(!email) { showModal('提示', '请先填写邮箱'); return; }
+            try {
+                const res = await axios.post(API + '/auth/send-code', { email });
+                showModal(res.data.success ? '成功' : '失败', res.data.message);
+            } catch(e) { showModal('错误', '发送失败'); }
+        };
+
+        // 举报
+        document.getElementById('submitReport').onclick = async () => {
+            if(!currentUser) { showModal('提示', '请先登录'); return; }
+            const player = document.getElementById('reportPlayer').value;
+            const reason = document.getElementById('reportReason').value;
+            if(!player || !reason) { showModal('提示', '请填写完整'); return; }
+            try {
+                const res = await axios.post(API + '/report', { player, reason, reporter: currentUser.username });
+                showModal(res.data.success ? '成功' : '失败', res.data.message);
+                if(res.data.success) {
+                    document.getElementById('reportPlayer').value = '';
+                    document.getElementById('reportReason').value = '';
+                }
+            } catch(e) { showModal('错误', '提交失败'); }
+        };
+
+        // 添加公告
+        document.getElementById('addAnnouncement').onclick = async () => {
+            const title = document.getElementById('annTitle').value;
+            const content = quillEditor.root.innerHTML;
+            const type = document.getElementById('annType').value;
+            if(!title || !content) { showModal('提示', '请填写标题和内容'); return; }
+            try {
+                const res = await axios.post(API + '/admin/announcements', { title, content, type }, { params: { admin: 'true' } });
+                showModal(res.data.success ? '成功' : '失败', res.data.message);
+                if(res.data.success) {
+                    document.getElementById('annTitle').value = '';
+                    quillEditor.root.innerHTML = '';
+                    loadAnnouncements();
+                    loadDeleteSelect();
+                }
+            } catch(e) { showModal('错误', '添加失败'); }
+        };
+
+        // 删除公告
+        document.getElementById('deleteAnnouncement').onclick = async () => {
+            const id = document.getElementById('deleteSelect').value;
+            if(!id) { showModal('提示', '请选择要删除的公告'); return; }
+            try {
+                const res = await axios.delete(API + `/admin/announcements/${id}`, { params: { admin: 'true' } });
+                showModal(res.data.success ? '成功' : '失败', res.data.message);
+                if(res.data.success) {
+                    loadAnnouncements();
+                    loadDeleteSelect();
+                }
+            } catch(e) { showModal('错误', '删除失败'); }
+        };
+
+        // 退出
+        document.getElementById('logoutBtn').onclick = () => { currentUser = null; updateUI(); showModal('提示', '已退出'); };
+
+        // 模态框控制
+        document.getElementById('loginBtn').onclick = () => document.getElementById('loginModal').classList.remove('hidden');
+        document.getElementById('registerBtn').onclick = () => document.getElementById('registerModal').classList.remove('hidden');
+        document.getElementById('closeLogin').onclick = () => document.getElementById('loginModal').classList.add('hidden');
+        document.getElementById('closeRegister').onclick = () => document.getElementById('registerModal').classList.add('hidden');
+        document.getElementById('closeAdmin').onclick = () => document.getElementById('adminModal').classList.add('hidden');
+        
+        // 反馈模态框
+        document.getElementById('feedbackBtn').onclick = () => document.getElementById('feedbackModal').classList.remove('hidden');
+        document.getElementById('closeFeedback').onclick = () => document.getElementById('feedbackModal').classList.add('hidden');
+        document.getElementById('cancelFeedback').onclick = () => document.getElementById('feedbackModal').classList.add('hidden');
+        document.getElementById('submitFeedback').onclick = submitFeedback;
+        
+        // 反馈类型选择
+        document.querySelectorAll('[data-type]').forEach(btn => {
+            btn.onclick = () => {
+                document.querySelectorAll('[data-type]').forEach(b => b.classList.remove('active', 'bg-green-600', 'text-white'));
+                btn.classList.add('active', 'bg-green-600', 'text-white');
+                selectedFeedbackType = btn.getAttribute('data-type');
+            };
+            // 默认选中第一个
+            if(btn.getAttribute('data-type') === 'general') {
+                btn.classList.add('active', 'bg-green-600', 'text-white');
+            }
+        });
+        
+        // 管理员面板标签页切换
+        let currentTab = 'whitelist';
+        document.querySelectorAll('.admin-tab-btn').forEach(btn => {
+            btn.onclick = () => {
+                document.querySelectorAll('.admin-tab-btn').forEach(b => b.classList.remove('border-b-2', 'border-green-600'));
+                btn.classList.add('border-b-2', 'border-green-600');
+                const tabName = btn.getAttribute('data-tab');
+                document.querySelectorAll('.admin-tab-content').forEach(content => content.classList.add('hidden'));
+                document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+                if(tabName === 'feedback') loadFeedbacks();
+                if(tabName === 'whitelist') loadWhitelistRequests();
+                if(tabName === 'announcement') loadDeleteSelect();
+            };
+        });
+        
+        // 管理员面板
+        document.getElementById('adminBtn').onclick = async () => {
+            const pwd = prompt('请输入管理员密码');
+            if(pwd === '20120619') {
+                if(!quillEditor) {
+                    quillEditor = new Quill('#editorContainer', {
+                        theme: 'snow',
+                        placeholder: '公告内容（支持超链接、字体大小等格式）...',
+                        modules: {
+                            toolbar: [
+                                [{ 'size': ['small', false, 'large', 'huge'] }],
+                                ['bold', 'italic', 'underline'],
+                                [{ 'color': [] }, { 'background': [] }],
+                                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                ['link', 'image'],
+                                ['clean']
+                            ]
+                        }
+                    });
+                }
+                await loadWhitelistRequests();
+                await loadDeleteSelect();
+                document.getElementById('adminModal').classList.remove('hidden');
+            } else alert('密码错误');
+        };
+        
+        document.getElementById('joinServer').onclick = () => showModal('服务器地址', 'pm.rainplay.cn:54160\n\n请确保已在官网注册并通过白名单审核');
+
+        // 初始化
+        loadAnnouncements();
+    </script>
+</body>
+</html>
