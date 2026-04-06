@@ -16,14 +16,13 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(PUBLIC_PATH));
 
-// ============ QQ邮箱配置 ============
 const EMAIL_CONFIG = {
-    host: 'smtp.qq.com',
-    port: 465,
-    secure: true,
+    host: process.env.EMAIL_HOST || 'smtp.qq.com',
+    port: parseInt(process.env.EMAIL_PORT) || 465,
+    secure: process.env.EMAIL_SECURE === 'true',
     auth: {
-        user: '3632372460@qq.com',
-         pass: process.env.EMAIL_PASS || 'btbrceardlvychbh'
+        user: process.env.EMAIL_USER || '3632372460@qq.com',
+        pass: process.env.EMAIL_PASS
     }
 };
 
