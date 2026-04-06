@@ -16,16 +16,17 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(PUBLIC_PATH));
 
-// ============ QQ邮箱配置 ============
+// ============ Outlook邮箱配置 ============
 const EMAIL_CONFIG = {
-    host: 'smtp.qq.com',
-    port: 465,
-    secure: true,
+    host: 'smtp-mail.outlook.com',
+    port: 587,
+    secure: false,
     auth: {
-        user: '3632372460@qq.com',
-         pass: process.env.EMAIL_PASS || 'btbrceardlvychbh'
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
     }
 };
+
 
 let transporter = null;
 
@@ -186,7 +187,8 @@ app.post('/api/auth/register', (req, res) => {
     writeData(data);
     
     // 通知管理员有新申请
-    sendEmail('3632372460@qq.com', '【永恒森林】新白名单申请', `用户 ${username} (${email}) 申请白名单，请登录管理面板审核。`);
+    sendEmail(process.env.EMAIL_USER, '【永恒森林】新白名单申请', `用户 ${username} (${email}) 申请白名单，请登录管理面板审核。`);
+
     
     res.json({ success: true, message: '注册成功！请等待管理员审核白名单。' });
 });
@@ -321,7 +323,8 @@ app.post('/api/report', async (req, res) => {
     if (!player || !reason) return res.json({ success: false, message: '请填写完整信息' });
     
     const content = `举报人：${reporter || '匿名'}\n违规玩家：${player}\n违规行为：${reason}\n时间：${new Date().toLocaleString()}`;
-    await sendEmail('3632372460@qq.com', '【永恒森林】违规举报', content);
+    await sendEmail(process.env.EMAIL_USER, '【永恒森林】违规举报', content);
+
     
     const logFile = path.join(BASE_PATH, 'reports.log');
     fs.appendFileSync(logFile, `[${new Date().toISOString()}] ${reporter} 举报 ${player}: ${reason}\n`);
@@ -358,11 +361,10 @@ app.post('/api/feedback', async (req, res) => {
         提交时间：${new Date().toLocaleString()}
         ==============================
     `;
-    
-    // 发送邮件通知管理员
-    await sendEmail('3632372460@qq.com', '【永恒森林】用户反馈', feedbackContent);
+    await sendEmail(process.env.EMAIL_USER, '【永恒森林】用户反馈', feedbackContent);
     
     // 保存到本地日志
+
     const logFile = path.join(BASE_PATH, 'feedbacks.log');
     fs.appendFileSync(logFile, `[${new Date().toISOString()}] ${name || '匿名'}: ${content}\n`);
     
