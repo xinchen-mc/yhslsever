@@ -23,7 +23,7 @@ const EMAIL_CONFIG = {
     secure: true,
     auth: {
         user: '3632372460@qq.com',
-        pass: 'btbrceardlvychbh'  // 替换成真实授权码
+         pass: process.env.EMAIL_PASS || 'btbrceardlvychbh'
     }
 };
 
