@@ -8,7 +8,7 @@ const app = express();
 const PORT = 3000;
 
 // 修改为你的实际路径
-const BASE_PATH = ' __dirname';
+const BASE_PATH = __dirname;
 const PUBLIC_PATH = path.join(BASE_PATH, 'public');
 const DATA_FILE = path.join(BASE_PATH, 'data.json');
 
